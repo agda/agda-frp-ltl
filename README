@@ -1,0 +1,8 @@
+This is an implementation of Functional Reactive Programming in Agda,
+with types given as LTL formulae.
+
+The top-level module is FRP.LTL.
+
+The specification is given in terms of "reactive types", defined in FRP.LTL.RSet.
+
+The implementation is given in term of "interval types", defined in FRP.LTL.ISet.
