@@ -3,8 +3,9 @@ open import Data.Product using ( ∃ ; _×_ ; _,_ )
 open import Data.Sum using ( _⊎_ ; inj₁ ; inj₂ )
 open import Data.Empty using ( ⊥ ; ⊥-elim )
 open import Data.Nat using ( ℕ ; zero ; suc ) renaming ( _+_ to _+ℕ_ ; _≤_ to _≤ℕ_ )
-open import Relation.Binary.PropositionalEquality using ( _≡_ ; _≢_ ; refl ; sym ; trans ; cong ; cong₂ )
+open import Relation.Binary.PropositionalEquality using ( _≡_ ; _≢_ ; refl ; sym ; cong ; cong₂ )
 open import Relation.Nullary using ( ¬_ ; Dec ; yes ; no )
+open import FRP.LTL.Util using ( _trans_ ) renaming ( +-comm to +ℕ-comm ; +-assoc to +ℕ-assoc )
 
 open Relation.Binary.PropositionalEquality.≡-Reasoning using ( begin_ ; _≡⟨_⟩_ ; _∎ )
 
@@ -12,6 +13,7 @@ module FRP.LTL.Time where
 
 infix 2 _≤_ _≥_ _≰_ _≱_ _<_ _>_
 infixr 4 _,_
+infixr 5 _≤-trans_ _<-transˡ_ _<-transʳ_ _≤-asym_ _≤-total_ 
 infixl 6 _+_ _∸_
 
 postulate
@@ -52,9 +54,9 @@ t > u = u < t
 ≤-refl : ∀ {t} → (t ≤ t)
 ≤-refl {t} = (0 , +-unit t)
 
-≤-trans : ∀ {t u v} → (t ≤ u) → (u ≤ v) → (t ≤ v)
-≤-trans {t} {u} {v} (m , t+m≡u) (n , u+n≡v) =
-  (m +ℕ n , trans (sym (+-assoc t m n)) (trans (cong₂ _+_ t+m≡u refl) u+n≡v))
+_≤-trans_ : ∀ {t u v} → (t ≤ u) → (u ≤ v) → (t ≤ v)
+_≤-trans_ {t} {u} {v} (m , t+m≡u) (n , u+n≡v) =
+  (m +ℕ n , (sym (+-assoc t m n)) trans (cong₂ _+_ t+m≡u refl) trans u+n≡v)
 
 ≡-impl-≤ : ∀ {t u} → (t ≡ u) → (t ≤ u)
 ≡-impl-≤ refl = ≤-refl
@@ -65,34 +67,21 @@ t > u = u < t
 <-impl-≱ : ∀ {t u} → (t < u) → (u ≰ t)
 <-impl-≱ (t≤u , u≰t) = u≰t
 
-<-transˡ : ∀ {t u v} → (t < u) → (u ≤ v) → (t < v)
-<-transˡ (t≤u , u≰t) u≤v = (≤-trans t≤u u≤v , λ v≤t → u≰t (≤-trans u≤v v≤t))
+_<-transˡ_ : ∀ {t u v} → (t < u) → (u ≤ v) → (t < v)
+_<-transˡ_ (t≤u , u≰t) u≤v = (t≤u ≤-trans u≤v , λ v≤t → u≰t (u≤v ≤-trans v≤t))
 
-<-transʳ : ∀ {t u v} → (t ≤ u) → (u < v) → (t < v)
-<-transʳ t≤u (u≤v , v≰u) = (≤-trans t≤u u≤v , λ v≤t → v≰u (≤-trans v≤t t≤u))
+_<-transʳ_ : ∀ {t u v} → (t ≤ u) → (u < v) → (t < v)
+_<-transʳ_ t≤u (u≤v , v≰u) = (t≤u ≤-trans u≤v , λ v≤t → v≰u (v≤t ≤-trans t≤u))
 
 _≮[_]_ : Time → ℕ → Time → Set
 s ≮[ zero  ] u = ⊥
 s ≮[ suc n ] u = ∀ {t} → (s ≤ t) → (t < u) → (s ≮[ n ] t)
 
-m+1+n≡1+m+n : ∀ m n → m +ℕ suc n ≡ suc (m +ℕ n)
-m+1+n≡1+m+n zero    n = refl
-m+1+n≡1+m+n (suc m) n = cong suc (m+1+n≡1+m+n m n)
-
-+ℕ-comm : ∀ m n → (m +ℕ n ≡ n +ℕ m)
-+ℕ-comm zero    zero    = refl
-+ℕ-comm zero    (suc n) = cong suc (+ℕ-comm zero n)
-+ℕ-comm (suc m) n       = trans (cong suc (+ℕ-comm m n)) (sym (m+1+n≡1+m+n n m))
-
-+ℕ-assoc : ∀ l m n → ((l +ℕ m) +ℕ n ≡ l +ℕ (m +ℕ n))
-+ℕ-assoc zero    m n = refl
-+ℕ-assoc (suc l) m n = cong suc (+ℕ-assoc l m n)
-
 <-wo′ : ∀ n {s u} → (s ≤ u) → (u ≤ s + n) → (s ≮[ suc n ] u)
 <-wo′ zero {s} s≤u u≤s+0 s≤t t<u = 
-  <-impl-≱ t<u (≤-trans u≤s+0 (≤-trans (≡-impl-≤ (+-unit s)) s≤t))
+  <-impl-≱ t<u (u≤s+0 ≤-trans ≡-impl-≤ (+-unit s) ≤-trans s≤t)
 <-wo′ (suc n) s≤u u≤s+1+n {t} s≤t ((zero , t+0≡u) , t≱u) = 
-  ⊥-elim (t≱u (≡-impl-≤ (trans (sym t+0≡u) (+-unit t))))
+  ⊥-elim (t≱u (≡-impl-≤ ((sym t+0≡u) trans (+-unit t))))
 <-wo′ (suc n) {s} {u} s≤u (l , u+l≡s+1+n) {t} s≤t ((suc m , t+1+m≡u) , t≱u) = 
   <-wo′ n s≤t (l +ℕ m , +-cancel 1 t+l+m+1≡s+n+1) where
     t+l+m+1≡s+n+1 : t + (l +ℕ m) + 1 ≡ s + n + 1
