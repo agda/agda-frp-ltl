@@ -8,7 +8,7 @@ open import FRP.LTL.RSet.Globally using ( □ )
 open import FRP.LTL.RSet.Product using ( _∧_ ; _&&&_ ; fst ; snd )
 open import FRP.LTL.Time using 
   ( Time ; _+_ ; _∸_ ; _≤_ ; _<_ 
-  ; ≤-refl ; ≤-trans ; <-impl-≤ ; <-impl-≱ ; <-transˡ ; <-transʳ
+  ; ≤-refl ; _≤-trans_ ; <-impl-≤ ; <-impl-≱ ; _<-transˡ_ ; _<-transʳ_
   ; ≡-impl-≤ ; +-unit ; _≮[_]_ ; <-wo )
 
 module FRP.LTL.RSet.Decoupled where
@@ -32,7 +32,7 @@ couple {A} {B} {s} f {u} s≤u σ = f s≤u σ′ where
 -- Variants on composition which produce decoupled functions
 
 _beforeˡ_ : ∀ {A s u v} → (A [ s , v ⟩) → (u ≤ v) → (A [ s , u ⟩)
-(σ beforeˡ u≤v) s≤t t<u = σ s≤t (<-transˡ t<u u≤v)
+(σ beforeˡ u≤v) s≤t t<u = σ s≤t (t<u <-transˡ u≤v)
 
 _$ˡ_ : ∀ {A B s u} → (A ▹ B) s → (A [ s , u ⟩) → (B [ s , u ])
 (f $ˡ σ) s≤t t≤u = f s≤t (σ beforeˡ t≤u)
@@ -41,7 +41,7 @@ _⋙ˡ_ : ∀ {A B C} → ⟦ (A ▹ B) ⇒ (B ⊵ C) ⇒ (A ▹ C) ⟧
 (f ⋙ˡ g) s≤t σ = g s≤t (f $ˡ σ)
 
 _beforeʳ_ : ∀ {A s u v} → (A [ s , v ⟩) → (u < v) → (A [ s , u ])
-(σ beforeʳ u<v) s≤t t≤u = σ s≤t (<-transʳ t≤u u<v)
+(σ beforeʳ u<v) s≤t t≤u = σ s≤t (t≤u <-transʳ u<v)
 
 _$ʳ_ : ∀ {A B s u} → (A ⊵ B) s → (A [ s , u ⟩) → (B [ s , u ⟩)
 (f $ʳ σ) s≤t t<u = f s≤t (σ beforeʳ t<u)
@@ -86,7 +86,7 @@ ifix {A} {B} {s} f {v} s≤v τ = fix g s≤v ≤-refl where
   g {u} s≤u σ u≤v = f s≤u ρ where
 
     ρ : (A ∧ B) [ s , u ⟩
-    ρ s≤t t<u = (σ s≤t t<u (≤-trans (<-impl-≤ t<u) u≤v) , τ s≤t (<-transˡ t<u u≤v))
+    ρ s≤t t<u = (σ s≤t t<u (<-impl-≤ t<u ≤-trans u≤v) , τ s≤t (t<u <-transˡ u≤v))
 
 -- Loops are derivable from indexed fixed points
 

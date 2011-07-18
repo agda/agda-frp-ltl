@@ -1,6 +1,6 @@
 open import FRP.LTL.RSet.Core using ( RSet ; ⟦_⟧ )
 open import FRP.LTL.RSet.Stateless using ( _⇒_ )
-open import FRP.LTL.Time using ( _≤_ ; ≤-refl ; ≤-trans )
+open import FRP.LTL.Time using ( _≤_ ; ≤-refl ; _≤-trans_ )
 
 module FRP.LTL.RSet.Globally where
 
@@ -18,7 +18,7 @@ extract : ∀ {A} → ⟦ □ A ⇒ A ⟧
 extract a = a ≤-refl
 
 duplicate : ∀ {A} → ⟦ □ A ⇒ □ (□ A) ⟧
-duplicate a s≤t t≤u = a (≤-trans s≤t t≤u)
+duplicate a s≤t t≤u = a (s≤t ≤-trans t≤u)
 
 -- Applicative structure of □
 

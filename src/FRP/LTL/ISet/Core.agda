@@ -1,15 +1,10 @@
 open import Data.Product using ( ∃ ; _×_ ; _,_ ; proj₁ ; proj₂ )
 open import Data.Sum using ( _⊎_ ; inj₁ ; inj₂ )
-open import FRP.LTL.Time.Bound using ( _≼_ ; ≼-refl ; _≼-trans_ ; _≼-asym_ ; _≼-total_ )
+open import FRP.LTL.Time.Bound using ( _≼_ ; ≼-refl ; _≼-trans_ ; _≼-asym_ ; _≼-total_ ; ≼-proof-irrel )
 open import FRP.LTL.Time.Interval using ( Interval ; [_⟩ ; _⊑_ ; _,_ ; lb ; ub )
 open import Relation.Binary.PropositionalEquality using ( _≡_ ; refl ; sym )
 
 module FRP.LTL.ISet.Core where
-
--- Need to prove proof irrelevance for ≼
-
-≼-proof-irrel : ∀ {t u} → (p q : t ≼ u) → (p ≡ q)
-≼-proof-irrel = {!!}
 
 infixr 4 _,_
 
