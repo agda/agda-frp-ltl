@@ -1,24 +1,24 @@
-open import Data.Product using ( ∃ ; _×_ ; _,_ ; proj₁ ; proj₂ )
+open import Data.Product using ( ∃ ; _×_ ; _,_ ; proj₁ ; proj₂ ; uncurry )
 open import Data.Sum using ( _⊎_ ; inj₁ ; inj₂ )
-open import FRP.LTL.Time.Bound using ( _≼_ ; ≼-refl ; _≼-trans_ ; _≼-asym_ ; _≼-total_ ; ≼-proof-irrel )
-open import FRP.LTL.Time.Interval using ( Interval ; [_⟩ ; _⊑_ ; _,_ ; lb ; ub )
+open import FRP.LTL.Time.Bound using ( Time∞ ; _≼_ ; _≺_ ; ≼-refl ; _≼-trans_ ; _≼-asym_ ; _≼-total_ ; ≺-impl-≼ ; ≼-proof-irrel ; ≡-impl-≼ )
+open import FRP.LTL.Time.Interval using ( Interval ; [_⟩ ; _⊑_ ; _⇝_ ; _,_ ; lb ; ub ; Int ; _++_∵_ ; ⊑-impl-≼ ; ⊑-impl-≽ ; int-≼ )
 open import Relation.Binary.PropositionalEquality using ( _≡_ ; refl ; sym )
+open import Relation.Unary using ( _∈_ )
 
 module FRP.LTL.ISet.Core where
 
 infixr 4 _,_
 
 -- Monotone interval types
-
-≡-impl-≼ : ∀ {s t} → (s ≡ t) → (s ≼ t)
-≡-impl-≼ refl = ≼-refl
+-- There's a bit of hoop-jumping here to avoid mentioning time bounds explicitly,
+-- in order to allow interval orders to be irrelevant.
 
 data MSet : Set₁ where
   _,_ : 
     (A : Interval → Set) →
-    ( (∀ {s} → A [ ≼-refl {s} ⟩)
-    × (∀ {s t u} {s≼t : s ≼ t} {t≼u : t ≼ u} → (A [ s≼t ⟩ × A [ t≼u ⟩) → A [ s≼t ≼-trans t≼u ⟩)
-    × (∀ {s t u} {s≼t : s ≼ t} {t≼u : t ≼ u} → A [ s≼t ≼-trans t≼u ⟩ → (A [ s≼t ⟩ × A [ t≼u ⟩))
+    ( (∀ {i} → .(i ⇝ i) → A i)
+    × (∀ {i j} .i⇝j → (A i × A j) → (A (i ++ j ∵ i⇝j))) 
+    × (∀ {i j} .i⇝j → A (i ++ j ∵ i⇝j) → (A i × A j))
     ) → MSet
 
 -- The underlying "unboxed" elements of an MSet
@@ -36,20 +36,16 @@ data B⟦_⟧ (A : MSet) (i : Interval) : Set where
 unbox : ∀ {A i} → B⟦ A ⟧ i → U⟦ A ⟧ i
 unbox [ a ] = a
 
-idB⟦_⟧ : ∀ A {s} → 
-  B⟦ A ⟧ [ ≼-refl {s} ⟩
-idB⟦ A , id , comp , split ⟧ = 
-  [ id ]
+idB⟦_⟧ : ∀ A {i} → .(i ⇝ i) → B⟦ A ⟧ i
+idB⟦ A , id , comp , split ⟧ i⇝i = [ id i⇝i ]
 
-compB⟦_⟧ : ∀ A {s t u} {s≼t : s ≼ t} {t≼u : t ≼ u} → 
-  (B⟦ A ⟧ [ s≼t ⟩ × B⟦ A ⟧ [ t≼u ⟩) → B⟦ A ⟧ [ s≼t ≼-trans t≼u ⟩
-compB⟦ A , id , comp , split ⟧ ([ σ₁ ] , [ σ₂ ]) =
-  [ comp (σ₁ , σ₂) ]
+compB⟦_⟧ : ∀ A {i j} .i⇝j → (B⟦ A ⟧ i × B⟦ A ⟧ j) → (B⟦ A ⟧ (i ++ j ∵ i⇝j))
+compB⟦ A , id , comp , split ⟧ i⇝j ([ σ₁ ] , [ σ₂ ]) =
+  [ comp i⇝j (σ₁ , σ₂) ]
 
-splitB⟦_⟧ : ∀ A {s t u} {s≼t : s ≼ t} {t≼u : t ≼ u} → 
-  B⟦ A ⟧ [ s≼t ≼-trans t≼u ⟩ → (B⟦ A ⟧ [ s≼t ⟩ × B⟦ A ⟧ [ t≼u ⟩)
-splitB⟦ A , id , comp , split ⟧ [ σ ] =
-  ([ proj₁ σ₁₂ ] , [ proj₂ σ₁₂ ]) where σ₁₂ = split σ
+splitB⟦_⟧ : ∀ A {i j} .i⇝j → B⟦ A ⟧ (i ++ j ∵ i⇝j) → (B⟦ A ⟧ i × B⟦ A ⟧ j)
+splitB⟦ A , id , comp , split ⟧ i⇝j [ σ ] =
+  ([ proj₁ σ₁₂ ] , [ proj₂ σ₁₂ ]) where σ₁₂ = split i⇝j σ
 
 -- Interval types
 
@@ -76,62 +72,50 @@ M⟦ A ⇛ B ⟧ i = ∀ j → (j ⊑ i) → I⟦ A ⇛ B ⟧ j
 
 -- Translation of ISet into MSet
 
-idI⟦_⟧ : ∀ A {s} → I⟦ A ⟧ [ ≼-refl {s} ⟩
-idI⟦ [ A ] ⟧ = idB⟦ A ⟧
-idI⟦ A ⇛ B ⟧ = λ σ → idI⟦ B ⟧
+idI⟦_⟧ : ∀ A {i} → .(i ⇝ i) → I⟦ A ⟧ i
+idI⟦ [ A ] ⟧ i⇝i = idB⟦ A ⟧ i⇝i
+idI⟦ A ⇛ B ⟧ i⇝i = λ σ → idI⟦ B ⟧ i⇝i
 
-idM⟦_⟧ : ∀ A {s} → M⟦ A ⟧ [ ≼-refl {s} ⟩
-idM⟦ [ A ] ⟧ = idI⟦ [ A ] ⟧
-idM⟦ A ⇛ B ⟧ = lemma where
+idM⟦_⟧ : ∀ A {i} → .(i ⇝ i) → M⟦ A ⟧ i
+idM⟦ [ A ] ⟧ i⇝i = idI⟦ [ A ] ⟧ i⇝i
+idM⟦ A ⇛ B ⟧ i⇝i = λ j j⊑i → 
+  idI⟦ A ⇛ B ⟧ ((⊑-impl-≼ j⊑i ≼-trans ≡-impl-≼ i⇝i ≼-trans ⊑-impl-≽ j⊑i) ≼-asym (int-≼ j))
 
-  lemma : ∀ {s} → M⟦ A ⇛ B ⟧ [ ≼-refl {s} ⟩
-  lemma [ t≼u ⟩ (s≼t , u≼s) with s≼t ≼-asym (t≼u ≼-trans u≼s)
-  lemma [ t≼u ⟩ (s≼t , u≼s) | refl with t≼u ≼-asym u≼s
-  lemma [ t≼u ⟩ (s≼t , u≼s) | refl | refl with ≼-proof-irrel t≼u ≼-refl
-  lemma [ .≼-refl ⟩ (s≼t , u≼s) | refl | refl | refl = idI⟦ A ⇛ B ⟧
+compI⟦_⟧ : ∀ A {i j} .i⇝j → (I⟦ A ⟧ i × I⟦ A ⟧ j) → (I⟦ A ⟧ (i ++ j ∵ i⇝j))
+compI⟦ [ A ] ⟧ i⇝j (σ₁ , σ₂) = compB⟦ A ⟧ i⇝j (σ₁ , σ₂)
+compI⟦ A ⇛ B ⟧ {i} {j} i⇝j (f₁ , f₂) = lemma where
 
-compI⟦_⟧ : ∀ A {s t u} {s≼t : s ≼ t} {t≼u : t ≼ u} → 
-  (I⟦ A ⟧ [ s≼t ⟩ × I⟦ A ⟧ [ t≼u ⟩) → I⟦ A ⟧ [ s≼t ≼-trans t≼u ⟩
-compI⟦ [ A ] ⟧ (σ₁ , σ₂) = compB⟦ A ⟧ (σ₁ , σ₂)
-compI⟦ A ⇛ B ⟧ {s} {t} {u} {s≼t} {t≼u} (f₁ , f₂) = lemma where
+  lemma : B⟦ A ⟧ (i ++ j ∵ i⇝j) → I⟦ B ⟧ (i ++ j ∵ i⇝j)
+  lemma σ = compI⟦ B ⟧ i⇝j (f₁ (proj₁ σ₁₂) , f₂ (proj₂ σ₁₂)) where σ₁₂ = splitB⟦ A ⟧ i⇝j σ
 
-  lemma : B⟦ A ⟧ [ s≼t ≼-trans t≼u ⟩ → I⟦ B ⟧ [ s≼t ≼-trans t≼u ⟩
-  lemma σ = compI⟦ B ⟧ (f₁ (proj₁ σ₁₂) , f₂ (proj₂ σ₁₂)) where σ₁₂ = splitB⟦ A ⟧ σ
+compM⟦_⟧ : ∀ A {i j} .i⇝j → (M⟦ A ⟧ i × M⟦ A ⟧ j) → (M⟦ A ⟧ (i ++ j ∵ i⇝j))
+compM⟦ [ A ] ⟧ i⇝j (σ₁ , σ₂) = compI⟦ [ A ] ⟧ i⇝j (σ₁ , σ₂)
+compM⟦ A ⇛ B ⟧ {i} {j} i⇝j (f₁ , f₂) = lemma where
 
-compM⟦_⟧ : ∀ A {s t u} {s≼t : s ≼ t} {t≼u : t ≼ u} → 
-  (M⟦ A ⟧ [ s≼t ⟩ × M⟦ A ⟧ [ t≼u ⟩) → M⟦ A ⟧ [ s≼t ≼-trans t≼u ⟩
-compM⟦ [ A ] ⟧ (σ₁ , σ₂) = compI⟦ [ A ] ⟧ (σ₁ , σ₂)
-compM⟦ A ⇛ B ⟧ {s} {t} {u} {s≼t} {t≼u} (f₁ , f₂) = lemma where
+  lemma : ∀ k → k ⊑ (i ++ j ∵ i⇝j) → B⟦ A ⟧ k → I⟦ B ⟧ k
+  lemma k k⊑i++j with lb k ≼-total ub i | lb j ≼-total ub k
+  lemma [ s≼t ⟩ (li≼s , t≼uj) | inj₁ s≼ui | inj₁ lj≼t = 
+    compI⟦ A ⇛ B ⟧ i⇝j (f₁ [ s≼ui ⟩ (li≼s , ≼-refl) , f₂ [ lj≼t ⟩ (≼-refl , t≼uj))
+  lemma [ s≼t ⟩ (li≼s , t≼uj) | inj₁ s≼ui | inj₂ t≼lj = 
+    f₁ [ s≼t ⟩ (li≼s , t≼lj ≼-trans ≡-impl-≼ (sym i⇝j))
+  lemma [ s≼t ⟩ (li≼s , t≼uj) | inj₂ ui≼s | inj₁ lj≼t = 
+    f₂ [ s≼t ⟩ (≡-impl-≼ (sym i⇝j) ≼-trans ui≼s , t≼uj)
+  lemma [ s≼t ⟩ (li≼s , t≼uj) | inj₂ ui≼s | inj₂ t≼lj = 
+    idI⟦ A ⇛ B ⟧ ((t≼lj ≼-trans ≡-impl-≼ (sym i⇝j) ≼-trans ui≼s) ≼-asym s≼t)
 
-  lemma : ∀ j → (j ⊑ [ s≼t ≼-trans t≼u ⟩) → B⟦ A ⟧ j → I⟦ B ⟧ j
-  lemma [ r≼v ⟩ (s≼r , v≼u) with lb [ r≼v ⟩ | ub [ r≼v ⟩
-  lemma [ r≼v ⟩ (s≼r , v≼u) | r | v with r ≼-total t | t ≼-total v
-  lemma [ r≼v ⟩ (s≼r , v≼u) | r | v | inj₁ r≼t | inj₁ t≼v with ≼-proof-irrel r≼v (r≼t ≼-trans t≼v)
-  lemma [ ._  ⟩ (s≼r , v≼u) | r | v | inj₁ r≼t | inj₁ t≼v | refl = 
-    compI⟦ A ⇛ B ⟧ (f₁ [ r≼t ⟩ (s≼r , ≼-refl) , f₂ [ t≼v ⟩ (≼-refl , v≼u))
-  lemma [ r≼v ⟩ (s≼r , v≼u) | r | v | inj₁ r≼t | inj₂ v≼t = 
-    f₁ [ r≼v ⟩ (s≼r , v≼t) 
-  lemma [ r≼v ⟩ (s≼r , v≼u) | r | v | inj₂ t≼r | inj₁ t≼v = 
-    f₂ [ r≼v ⟩ (t≼r , v≼u) 
-  lemma [ r≼v ⟩ (s≼r , v≼u) | r | v | inj₂ t≼r | inj₂ v≼t with r≼v ≼-asym (v≼t ≼-trans t≼r)
-  lemma [ r≼v ⟩ (s≼r , v≼u) | r | .r | inj₂ t≼r | inj₂ v≼t | refl with ≼-proof-irrel r≼v ≼-refl
-  lemma [ ._  ⟩ (s≼r , v≼u) | r | .r | inj₂ t≼r | inj₂ v≼t | refl | refl = 
-    idI⟦ A ⇛ B ⟧ 
+splitM⟦_⟧ : ∀ A {i j} .i⇝j → M⟦ A ⟧ (i ++ j ∵ i⇝j) → (M⟦ A ⟧ i × M⟦ A ⟧ j)
+splitM⟦ [ A ] ⟧ i⇝j σ = splitB⟦ A ⟧ i⇝j σ
+splitM⟦ A ⇛ B ⟧ {i} {j} i⇝j f = (f₁ , f₂) where
 
-splitM⟦_⟧ : ∀ A {s t u} {s≼t : s ≼ t} {t≼u : t ≼ u} → 
-  M⟦ A ⟧ [ s≼t ≼-trans t≼u ⟩ → (M⟦ A ⟧ [ s≼t ⟩ × M⟦ A ⟧ [ t≼u ⟩)
-splitM⟦ [ A ] ⟧ σ = splitB⟦ A ⟧ σ
-splitM⟦ A ⇛ B ⟧ {s} {t} {u} {s≼t} {t≼u} f = (f₁ , f₂) where
+  f₁ : ∀ k → (k ⊑ i) → B⟦ A ⟧ k → I⟦ B ⟧ k 
+  f₁ k k⊑i = f k (⊑-impl-≽ k⊑i , ⊑-impl-≼ k⊑i ≼-trans ≡-impl-≼ i⇝j ≼-trans int-≼ j)
 
-  f₁ : ∀ j → (j ⊑ [ s≼t ⟩) → B⟦ A ⟧ j → I⟦ B ⟧ j
-  f₁ [ r≼v ⟩ (s≼r , v≼t) σ = f [ r≼v ⟩ (s≼r , v≼t ≼-trans t≼u) σ
-
-  f₂ : ∀ j → (j ⊑ [ t≼u ⟩) → B⟦ A ⟧ j → I⟦ B ⟧ j
-  f₂ [ r≼v ⟩ (t≼r , v≼u) σ = f [ r≼v ⟩ (s≼t ≼-trans t≼r , v≼u) σ
+  f₂ : ∀ k → (k ⊑ j) → B⟦ A ⟧ k → I⟦ B ⟧ k
+  f₂ k k⊑j = f k (int-≼ i ≼-trans ≡-impl-≼ i⇝j ≼-trans ⊑-impl-≽ k⊑j , ⊑-impl-≼ k⊑j) 
 
 mset : ISet → MSet
 mset A = 
   ( M⟦ A ⟧
-  , (λ {s} → idM⟦ A ⟧ {s})
-  , (λ {s} → compM⟦ A ⟧ {s})
-  , (λ {s} → splitM⟦ A ⟧ {s}) )
+  , (λ {i} → idM⟦ A ⟧ {i})
+  , (λ {i j} → compM⟦ A ⟧ {i} {j})
+  , (λ {i j} → splitM⟦ A ⟧ {i} {j}) )

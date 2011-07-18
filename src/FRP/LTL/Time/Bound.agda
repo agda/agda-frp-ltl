@@ -1,5 +1,5 @@
 open import Data.Empty using ( ⊥-elim )
-open import Data.Product using ( _×_ )
+open import Data.Product using ( _×_ ; _,_ )
 open import Data.Sum using ( _⊎_ ; inj₁ ; inj₂ )
 open import Relation.Binary.PropositionalEquality using ( _≡_ ; _≢_ ; refl ; cong )
 open import Relation.Nullary using ( ¬_ )
@@ -71,7 +71,8 @@ fin s ≼-total fin t with s ≤-total t
 ... | inj₁ s≤t = inj₁ (≤-impl-≼ s≤t)
 ... | inj₂ t≤s = inj₂ (≤-impl-≼ t≤s)
 
--- Need to prove proof irrelevance for ≼
+≡-impl-≼ : ∀ {s t} → (s ≡ t) → (s ≼ t)
+≡-impl-≼ refl = ≼-refl
 
 ≼-proof-irrel : ∀ {t u} → (p q : t ≼ u) → (p ≡ q)
 ≼-proof-irrel ∞≼∞ ∞≼∞ = refl
@@ -80,3 +81,6 @@ fin s ≼-total fin t with s ≤-total t
 ≼-proof-irrel -∞≼t -∞≼t = refl
 ≼-proof-irrel -∞≼-∞ -∞≼-∞ = refl
 ≼-proof-irrel (≤-impl-≼ t≤₁u) (≤-impl-≼ t≤₂u) = cong ≤-impl-≼ (≤-proof-irrel t≤₁u t≤₂u)
+
+≺-impl-≼ : ∀ {t u} → (t ≺ u) → (t ≼ u)
+≺-impl-≼ (t≼u , u⋠t) = t≼u

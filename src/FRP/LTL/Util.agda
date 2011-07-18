@@ -6,6 +6,11 @@ module FRP.LTL.Util where
 
 infixr 5 _trans_ _∋_
 
+-- Irrelevant projections
+
+postulate
+  .irrelevant : ∀ {A : Set} → .A → A
+
 -- An infix variant of trans
 
 _trans_ : ∀ {X : Set} {x y z : X} → (x ≡ y) → (y ≡ z) → (x ≡ z)
