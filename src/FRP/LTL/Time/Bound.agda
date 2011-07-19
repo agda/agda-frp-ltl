@@ -74,6 +74,9 @@ fin s ≼-total fin t with s ≤-total t
 ≡-impl-≼ : ∀ {s t} → (s ≡ t) → (s ≼ t)
 ≡-impl-≼ refl = ≼-refl
 
+≡-impl-≽ : ∀ {s t} → (s ≡ t) → (t ≼ s)
+≡-impl-≽ refl = ≼-refl
+
 ≼-proof-irrel : ∀ {t u} → (p q : t ≼ u) → (p ≡ q)
 ≼-proof-irrel ∞≼∞ ∞≼∞ = refl
 ≼-proof-irrel t≼∞ t≼∞ = refl
@@ -84,3 +87,9 @@ fin s ≼-total fin t with s ≤-total t
 
 ≺-impl-≼ : ∀ {t u} → (t ≺ u) → (t ≼ u)
 ≺-impl-≼ (t≼u , u⋠t) = t≼u
+
+src : ∀ {s t} → .(s ≼ t) → Time∞
+src {s} {t} s≼t = s
+
+tgt : ∀ {s t} → .(s ≼ t) → Time∞
+tgt {s} {t} s≼t = t

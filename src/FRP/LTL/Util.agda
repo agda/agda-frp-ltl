@@ -1,5 +1,6 @@
 open import Data.Nat using ( ℕ ; zero ; suc ; _+_ ; _≤_ ; z≤n ; s≤s )
 open import Relation.Binary.PropositionalEquality using ( _≡_ ; refl ; sym ; cong )
+open import Relation.Binary.PropositionalEquality.TrustMe using ( trustMe )
 open import Relation.Nullary using ( ¬_ )
 
 module FRP.LTL.Util where
@@ -10,6 +11,11 @@ infixr 5 _trans_ _∋_
 
 postulate
   .irrelevant : ∀ {A : Set} → .A → A
+
+-- Irrelevant ≡ can be promoted to relevant ≡
+
+≡-relevant : ∀ {A : Set} {a b : A} → .(a ≡ b) → (a ≡ b)
+≡-relevant a≡b = trustMe
 
 -- An infix variant of trans
 

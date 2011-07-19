@@ -2,12 +2,12 @@ open import FRP.LTL.Time using ( Time )
 open import FRP.LTL.Time.Bound using ( Time∞ ; _≼_ ; _≺_ ; fin ; ≼-refl ; _≼-trans_ ; ≡-impl-≼ )
 open import FRP.LTL.Util using ( irrelevant )
 open import Relation.Unary using ( _∈_ )
-open import Relation.Binary.PropositionalEquality using ( _≡_ )
+open import Relation.Binary.PropositionalEquality using ( _≡_ ; refl ; sym )
 
 module FRP.LTL.Time.Interval where
 
-infixr 2 _⊑_ _⇝_
-infixr 4 _,_ _++_∵_
+infixr 2 _⊑_ _~_
+infixr 4 _,_ _⌢_∵_
 
 -- Semi-open intervals, with possibly infinite bounds
 
@@ -20,8 +20,8 @@ lb ([_⟩ {s} {t} s≼t) = s
 ub : Interval → Time∞
 ub ([_⟩ {s} {t} s≼t) = t
 
-.int-≼ : ∀ i → (lb i ≼ ub i)
-int-≼ [ s≼t ⟩ = irrelevant s≼t
+.lb≼ub : ∀ i → (lb i ≼ ub i)
+lb≼ub [ s≼t ⟩ = irrelevant s≼t
 
 -- Semantics of intervals
 
@@ -51,10 +51,16 @@ _⊑-trans_ : ∀ {i j k} → (i ⊑ j) → (j ⊑ k) → (i ⊑ k)
 
 -- When do two intervals abut?
 
-_⇝_ : Interval → Interval → Set
-i ⇝ j = ub i ≡ lb j
+_~_ : Interval → Interval → Set
+i ~ j = ub i ≡ lb j
 
 -- Concatenation of intervals
 
-_++_∵_ : ∀ i j → .(i ⇝ j) → Interval
-i ++ j ∵ i⇝j = [ int-≼ i ≼-trans ≡-impl-≼ i⇝j ≼-trans int-≼ j ⟩
+_⌢_∵_ : ∀ i j → (i ~ j) → Interval
+i ⌢ j ∵ i~j = [ lb≼ub i ≼-trans ≡-impl-≼ i~j ≼-trans lb≼ub j ⟩
+
+⌢-inj₁ : ∀ i j i~j → (i ⊑ (i ⌢ j ∵ i~j))
+⌢-inj₁ [ s≼t ⟩ [ t≼u ⟩ refl = (≼-refl , t≼u)
+
+⌢-inj₂ : ∀ i j i~j → (j ⊑ (i ⌢ j ∵ i~j))
+⌢-inj₂ [ s≼t ⟩ [ t≼u ⟩ refl = (s≼t , ≼-refl)
