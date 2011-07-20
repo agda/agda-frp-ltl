@@ -1,12 +1,13 @@
 open import Data.Product using ( _×_ ; _,_ )
 open import Data.Sum using ( _⊎_ ; inj₁ ; inj₂ )
+open import FRP.LTL.RSet.Core using ( RSet )
 open import FRP.LTL.Time.Bound using 
-  ( Time∞ ; _≼_ ; _≺_ ; ≼-refl ; _≼-trans_ ; _≼-asym_ ; _≼-total_
-  ; ≺-impl-≼ ; ≡-impl-≼ ; ≡-impl-≽ ; src )
+  ( Time∞ ; fin ; _≼_ ; _≺_ ; ≼-refl ; _≼-trans_ ; _≼-asym_ ; _≼-total_ ; _≺-transˡ_
+  ; ≺-impl-≼ ; ≡-impl-≼ ; ≡-impl-≽ ; ≺-impl-⋡ ; src )
 open import FRP.LTL.Time.Interval using 
-  ( Interval ; [_⟩ ; _⊑_ ; _~_ ; _,_ ; lb ; ub ; Int ; _⌢_∵_ 
-  ; ⊑-impl-≼ ; ⊑-impl-≽ ; lb≼ub ; _⊑-trans_ ; ⌢-inj₁ ; ⌢-inj₂ )
-open import FRP.LTL.Util using ( ≡-relevant )
+  ( Interval ; [_⟩ ; _⊑_ ; _~_ ; _,_ ; lb ; ub ; lb≼ ; ≺ub ; Int ; _⌢_∵_ 
+  ; ⊑-impl-≼ ; ⊑-impl-≽ ; lb≼ub ; ⊑-refl ; _⊑-trans_ ; ⌢-inj₁ ; ⌢-inj₂ )
+open import FRP.LTL.Util using ( ≡-relevant ; ⊥-elim )
 open import Relation.Binary.PropositionalEquality using ( _≡_ ; refl )
 open import Relation.Unary using ( _∈_ )
 
@@ -67,7 +68,7 @@ I⟦ A ⇛ B ⟧ i = B⟦ A ⟧ i → I⟦ B ⟧ i
 -- Monotone semantics of ISets
 
 M⟦_⟧ : ISet → Interval → Set
-M⟦ [ A ] ⟧ i = I⟦ [ A ] ⟧ i
+M⟦ [ A ] ⟧ i = B⟦ A ⟧ i
 M⟦ A ⇛ B ⟧ i = ∀ j → (j ⊑ i) → I⟦ A ⇛ B ⟧ j
 
 -- User-level semantics
@@ -102,12 +103,12 @@ compM⟦ A ⇛ B ⟧ i j i~j (f₁ , f₂) = lemma where
   lemma k k⊑i⌢j with lb k ≼-total ub i | lb j ≼-total ub k
   lemma [ s≼t ⟩ (li≼s , t≼uj) | inj₁ s≼ui | inj₁ lj≼t = 
     compI⟦ A ⇛ B ⟧ [ s≼ui ⟩ [ lj≼t ⟩ i~j (f₁ [ s≼ui ⟩ (li≼s , ≼-refl) , f₂ [ lj≼t ⟩ (≼-refl , t≼uj))
-  lemma [ s≼t ⟩ (li≼s , t≼uj) | inj₁ s≼ui | inj₂ t≼lj = 
-    f₁ [ s≼t ⟩ (li≼s , t≼lj ≼-trans ≡-impl-≽ i~j)
-  lemma [ s≼t ⟩ (li≼s , t≼uj) | inj₂ ui≼s | inj₁ lj≼t = 
-    f₂ [ s≼t ⟩ (≡-impl-≽ i~j ≼-trans ui≼s , t≼uj)
-  lemma [ s≼t ⟩ (li≼s , t≼uj) | inj₂ ui≼s | inj₂ t≼lj = 
-    idI⟦ A ⇛ B ⟧ [ s≼t ⟩ (≡-relevant ((t≼lj ≼-trans ≡-impl-≽ i~j ≼-trans ui≼s) ≼-asym s≼t)) 
+  lemma [ s≼t ⟩ (li≼s , t≼uj) | inj₁ s≼ui | inj₂ t≺lj = 
+    f₁ [ s≼t ⟩ (li≼s , ≺-impl-≼ t≺lj ≼-trans ≡-impl-≽ i~j)
+  lemma [ s≼t ⟩ (li≼s , t≼uj) | inj₂ ui≺s | inj₁ lj≼t = 
+    f₂ [ s≼t ⟩ (≡-impl-≽ i~j ≼-trans ≺-impl-≼ ui≺s , t≼uj)
+  lemma [ s≼t ⟩ (li≼s , t≼uj) | inj₂ ui≺s | inj₂ t≺lj = 
+    ⊥-elim (≺-impl-⋡ ui≺s (s≼t ≼-trans ≺-impl-≼ t≺lj ≼-trans ≡-impl-≽ i~j))
 
 splitM⟦_⟧ : ∀ A i j i~j → M⟦ A ⟧ (i ⌢ j ∵ i~j) → (M⟦ A ⟧ i × M⟦ A ⟧ j)
 splitM⟦ [ A ] ⟧ i j i~j σ = splitB⟦ A ⟧ i j i~j σ
@@ -122,10 +123,46 @@ splitM⟦ A ⇛ B ⟧ i j i~j f = (f₁ , f₂) where
 mset : ISet → MSet
 mset A =  ( M⟦ A ⟧ , idM⟦ A ⟧ , compM⟦ A ⟧ , splitM⟦ A ⟧ )
 
+-- Translations back and forth between M⟦ A ⟧ and I⟦ A ⟧
+
+m→i : ∀ {A i} → M⟦ A ⟧ i → I⟦ A ⟧ i
+m→i {[ A ]} {i} σ = σ
+m→i {A ⇛ B} {i} f = f i ⊑-refl
+
+i→m : ∀ {A i} → (∀ j → (j ⊑ i) → I⟦ A ⟧ j) → M⟦ A ⟧ i
+i→m {[ A ]} {i} σ = σ i ⊑-refl
+i→m {A ⇛ B} {i} f = f
+
+-- M⟦ A ⟧ respects ⊑
+
+⊑-subsum : ∀ {A i j} → (i ⊑ j) → (M⟦ A ⟧ j) → (M⟦ A ⟧ i)
+⊑-subsum {A} {[ t≼u ⟩} {[ s≼v ⟩} (s≼t , u≼v) σ with splitM⟦ A ⟧ [ s≼t ⟩ [ t≼u ≼-trans u≼v ⟩ refl σ
+⊑-subsum {A} {[ t≼u ⟩} {[ s≼v ⟩} (s≼t , u≼v) σ | (σ₁ , σ₂₃) with splitM⟦ A ⟧ [ t≼u ⟩ [ u≼v ⟩ refl σ₂₃
+⊑-subsum {A} {[ t≼u ⟩} {[ s≼v ⟩} (s≼t , u≼v) σ | (σ₁ , σ₂₃) | (σ₂ , σ₃) = σ₂
+
+-- Embedding of RSet into ISet
+
+⌈_⌉ : RSet → ISet
+⌈ A ⌉ = [ (λ i → ∀ t → .(t ∈ Int i) → A t) , id , comp , split ] where
+
+  id : ∀ i i~i t .t∈i → A t
+  id i i~i t t∈i = ⊥-elim (≺-impl-⋡ (≺ub t∈i) (≡-impl-≼ i~i ≼-trans lb≼ t∈i))
+
+  comp : ∀ i j i~j → ((∀ t → .(t ∈ Int i) → A t) × (∀ t → .(t ∈ Int j) → A t)) → 
+    (∀ t → .(t ∈ Int (i ⌢ j ∵ i~j)) → A t)
+  comp i j i~j (σ₁ , σ₂) t t∈i⌢j with ub i ≼-total fin t
+  comp i j i~j (σ₁ , σ₂) t t∈i⌢j | inj₁ u≼t = σ₂ t (≡-impl-≽ i~j ≼-trans u≼t , ≺ub t∈i⌢j)
+  comp i j i~j (σ₁ , σ₂) t t∈i⌢j | inj₂ t≺u = σ₁ t (lb≼ t∈i⌢j , t≺u)
+
+  split : ∀ i j i~j → (∀ t .t∈i⌢j → A t) → ((∀ t .t∈i → A t) × (∀ t .t∈j → A t))
+  split i j i~j σ = 
+    ( (λ t t∈i → σ t (lb≼ t∈i , ≺ub t∈i ≺-transˡ ≡-impl-≼ i~j ≼-trans lb≼ub j))
+    , (λ t t∈j → σ t (lb≼ub i ≼-trans ≡-impl-≼ i~j ≼-trans lb≼ t∈j , ≺ub t∈j)) )
+
 -- Embedding of Set into ISet
 
--- We could just use functions to embed Set into ISet, but it's a bit
--- more efficient to opimize for constant signals.
+-- We could just embed Set into RSet and then into ISet, but it's a bit
+-- more efficient to optimize for constant signals.
 
 data IList (A : Interval → Set) : Interval → Set where
   nil : ∀ {i} → (i ~ i) → IList A i
@@ -151,9 +188,9 @@ splitList split [ s≼t ⟩ [ t≼u ⟩ refl (cons {[ s≼v ⟩} {[ v≼u ⟩} r
 splitList split [ s≼t ⟩ [ t≼u ⟩ refl (cons {[ s≼v ⟩} {[ v≼u ⟩} refl σ σs)
   | inj₁ t≼v | (σ₁ , σ₂) = (cons {i = [ s≼t ⟩} {j = [ ≼-refl ⟩} refl σ₁ (nil refl) , cons refl σ₂ σs)
 splitList split [ s≼t ⟩ [ t≼u ⟩ refl (cons {[ s≼v ⟩} {[ v≼u ⟩} refl σ σs) 
-  | inj₂ v≼t with splitList split [ v≼t ⟩ [ t≼u ⟩ refl σs
+  | inj₂ v≺t with splitList split [ ≺-impl-≼ v≺t ⟩ [ t≼u ⟩ refl σs
 splitList split [ s≼t ⟩ [ t≼u ⟩ refl (cons {[ s≼v ⟩} {[ v≼u ⟩} refl σ σs) 
-  | inj₂ v≼t | (σs₁ , σs₂) = (cons refl σ σs₁ , σs₂)
+  | inj₂ v≺t | (σs₁ , σs₂) = (cons refl σ σs₁ , σs₂)
 
 data Always (A : Set) (i : Interval) : Set where
   const : A → Always A i

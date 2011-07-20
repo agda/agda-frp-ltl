@@ -1,3 +1,4 @@
+open import Data.Empty using ( ⊥ )
 open import Data.Nat using ( ℕ ; zero ; suc ; _+_ ; _≤_ ; z≤n ; s≤s )
 open import Relation.Binary.PropositionalEquality using ( _≡_ ; refl ; sym ; cong )
 open import Relation.Binary.PropositionalEquality.TrustMe using ( trustMe )
@@ -16,6 +17,11 @@ postulate
 
 ≡-relevant : ∀ {A : Set} {a b : A} → .(a ≡ b) → (a ≡ b)
 ≡-relevant a≡b = trustMe
+
+-- A version of ⊥-elim which takes an irrelevant argument
+
+⊥-elim : {A : Set} → .⊥ → A
+⊥-elim ()
 
 -- An infix variant of trans
 

@@ -1,5 +1,6 @@
 open import FRP.LTL.Time using ( Time )
-open import FRP.LTL.Time.Bound using ( Time∞ ; _≼_ ; _≺_ ; fin ; ≼-refl ; _≼-trans_ ; ≡-impl-≼ )
+open import FRP.LTL.Time.Bound using 
+  ( Time∞ ; _≼_ ; _≺_ ; fin ; +∞-top ; ≼-refl ; _≼-trans_ ; ≡-impl-≼ )
 open import FRP.LTL.Util using ( irrelevant )
 open import Relation.Unary using ( _∈_ )
 open import Relation.Binary.PropositionalEquality using ( _≡_ ; refl ; sym )
@@ -30,6 +31,12 @@ data Int∞ (i : Interval) (t : Time∞) : Set where
 
 Int : Interval → Time → Set
 Int i t = fin t ∈ Int∞ i
+
+lb≼ : ∀ {t i} → (t ∈ Int i) → (lb i ≼ fin t)
+lb≼ (s≼t , t≺u) = s≼t
+
+≺ub : ∀ {t i} → (t ∈ Int i) → (fin t ≺ ub i)
+≺ub (s≼t , t≺u) = t≺u
 
 -- Ordering on intervals
 
@@ -64,3 +71,8 @@ i ⌢ j ∵ i~j = [ lb≼ub i ≼-trans ≡-impl-≼ i~j ≼-trans lb≼ub j ⟩
 
 ⌢-inj₂ : ∀ i j i~j → (j ⊑ (i ⌢ j ∵ i~j))
 ⌢-inj₂ [ s≼t ⟩ [ t≼u ⟩ refl = (s≼t , ≼-refl)
+
+-- Up-closure of a time
+
+↑ : Time∞ → Interval
+↑ t = [ +∞-top {t} ⟩

@@ -100,6 +100,12 @@ _≤-asym_ : ∀ {t u} → (t ≤ u) → (u ≤ t) → (t ≡ u)
 ∸≡0-impl-≤ : ∀ {t u} → (t ∸ u ≡ 0) → (t ≤ u)
 ∸≡0-impl-≤ t∸u≡0 = t≤u+t∸u ≤-trans ≡-impl-≤ (cong₂ _+_ refl t∸u≡0 trans +-unit _)
 
+∸≢0-impl-≰ : ∀ {t u n} → (t ∸ u ≡ suc n) → (t ≰ u)
+∸≢0-impl-≰ t∸u≡1+n t≤u 
+  with sym t∸u≡1+n trans ≤0-impl-≡0 (∸-min (t≤u ≤-trans ≡-impl-≤ (sym (+-unit _))))
+∸≢0-impl-≰ t∸u≡1+n t≤u 
+  | ()
+
 t∸u≢0-impl-u∸t≡0 : ∀ t u {n} → (t ∸ u ≡ suc n) → (u ∸ t ≡ 0)
 t∸u≢0-impl-u∸t≡0 t u {n} t∸u≡1+n with t≤u+t∸u {t} {u}
 t∸u≢0-impl-u∸t≡0 t u {n} t∸u≡1+n | (zero , t+0≡u+t∸u) =
@@ -108,11 +114,11 @@ t∸u≢0-impl-u∸t≡0 t u {n} t∸u≡1+n | (suc m , t+1+m≡u+t∸u) =
   ⊥-elim (1+n≰n n (subst₂ _≤ℕ_ t∸u≡1+n refl 
     (∸-min (m , suc-cancelʳ (t+1+m≡u+t∸u trans cong₂ _+_ refl t∸u≡1+n)))))
 
-_≤-total_ : ∀ t u → (t ≤ u) ⊎ (u ≤ t)
+_≤-total_ : ∀ t u → (t ≤ u) ⊎ (u < t)
 t ≤-total u with inspect (t ∸ u)
 t ≤-total u | zero  with-≡ t∸u≡0 = inj₁ (∸≡0-impl-≤ t∸u≡0)
 t ≤-total u | suc n with-≡ t∸u≡1+n with t∸u≢0-impl-u∸t≡0 t u t∸u≡1+n
-t ≤-total u | suc n with-≡ t∸u≡1+n | u∸t≡0 = inj₂ (∸≡0-impl-≤ u∸t≡0)
+t ≤-total u | suc n with-≡ t∸u≡1+n | u∸t≡0 = inj₂ (∸≡0-impl-≤ u∸t≡0 , ∸≢0-impl-≰ t∸u≡1+n)
 
 -- Lemmas about <
 
