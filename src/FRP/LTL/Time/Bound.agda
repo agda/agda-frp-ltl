@@ -1,13 +1,17 @@
-open import Data.Empty using ( ⊥-elim )
-open import Data.Product using ( _×_ ; _,_ )
+open import Data.Nat using ( ℕ ; zero ; suc )
+open import Data.Product using ( ∃ ; _×_ ; _,_ )
 open import Data.Sum using ( _⊎_ ; inj₁ ; inj₂ )
 open import Relation.Binary.PropositionalEquality using ( _≡_ ; _≢_ ; refl ; cong )
 open import Relation.Nullary using ( ¬_ )
-open import FRP.LTL.Time using ( Time ; _<_ ; _≤_ ; ≤-refl ; _≤-trans_ ; _≤-asym_ ; _≤-total_ ; ≤-proof-irrel )
+open import FRP.LTL.Time using 
+  ( Time ; _<_ ; _≤_ ; _≥_ ; ≤-refl ; _≤-trans_ ; _≤-asym_ ; _≤-total_ ; ≤-proof-irrel ; ≡-impl-≥
+  ; _∸_ ; _+_ ; t≤u+t∸u ; +-unit ; +-assoc ; +-resp-≤ ; <-impl-+1≤ )
+open import FRP.LTL.Util using ( ⊥-elim )
 
 module FRP.LTL.Time.Bound where
 
 infixr 2 _≼_ _≺_ _⋠_ 
+infixr 4 _,_
 infixr 5 _≼-trans_ _≼-asym_ _≼-total_ _≺-transˡ_ _≺-transʳ_
 
 -- Time bounds, which extend Time with least and greatest elements
@@ -38,6 +42,9 @@ t≺+∞ = (+∞-top , λ ())
 
 <-impl-≺ : ∀ {t u} → (t < u) → (fin t ≺ fin u)
 <-impl-≺ (t≤u , u≰t) = (≤-impl-≼ t≤u , λ u≼t → u≰t (≼-impl-≤ u≼t))
+
+≺-impl-< : ∀ {t u} → (fin t ≺ fin u) → (t < u)
+≺-impl-< (t≼u , u⋠t) = (≼-impl-≤ t≼u , λ u≤t → u⋠t (≤-impl-≼ u≤t))
 
 -- ≼ is a decidable total order
 
@@ -94,3 +101,25 @@ src {s} {t} s≼t = s
 
 tgt : ∀ {s t} → .(s ≼ t) → Time∞
 tgt {s} {t} s≼t = t
+
+-- An induction scheme for time bounds
+
+_+_≻_ : Time∞ → ℕ → Time∞ → Set
+s + zero  ≻ u = u ≺ s
+s + suc n ≻ u = ∀ {t} → (s ≺ t) → (t + n ≻ u)
+
+data ≺-Indn (s u : Time∞) : Set where
+  _,_ : ∀ n → .(s + n ≻ u) → ≺-Indn s u
+
+≺-indn : ∀ {s u} → .(u ≺ +∞) → ≺-Indn s u
+≺-indn {s}     {+∞}    u≺∞ = ⊥-elim (≺-impl-≢ u≺∞ refl)
+≺-indn {+∞}    {fin u} u≺∞ = (zero , t≺+∞)
+≺-indn {fin s} {fin u} u≺∞ = (suc (u ∸ s) , lemma s u (u ∸ s) t≤u+t∸u) where
+
+  lemma : ∀ s u n → (s + n ≥ u) → (fin s + suc n ≻ fin u)
+  lemma s u zero    s+0≥u   s≺t = 
+    (≤-impl-≼ s+0≥u ≼-trans ≡-impl-≼ (cong fin (+-unit s))) ≺-transʳ s≺t
+  lemma s u (suc n) s+1+n≥u {fin t} s≺t = lemma t u n 
+    (s+1+n≥u ≤-trans ≡-impl-≥ (+-assoc s 1 n) ≤-trans +-resp-≤ (<-impl-+1≤ (≺-impl-< s≺t)) n)
+  lemma s u (suc n) s+1+n≥u {+∞} s≺t = 
+    λ ∞≺v → ⊥-elim (≺-impl-⋡ ∞≺v +∞-top)

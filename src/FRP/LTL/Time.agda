@@ -83,6 +83,9 @@ _≤-trans_ {t} {u} {v} (m , t+m≡u) (n , u+n≡v) =
 ≡-impl-≤ : ∀ {t u} → (t ≡ u) → (t ≤ u)
 ≡-impl-≤ refl = ≤-refl
 
+≡-impl-≥ : ∀ {t u} → (t ≡ u) → (t ≥ u)
+≡-impl-≥ refl = ≤-refl
+
 _≤-asym_ : ∀ {t u} → (t ≤ u) → (u ≤ t) → (t ≡ u)
 (m , t+m≡u) ≤-asym (n , u+n≡t) = 
   sym (+-unit _) trans cong₂ _+_ refl (sym m≡0) trans t+m≡u where
@@ -120,6 +123,16 @@ t ≤-total u | zero  with-≡ t∸u≡0 = inj₁ (∸≡0-impl-≤ t∸u≡0)
 t ≤-total u | suc n with-≡ t∸u≡1+n with t∸u≢0-impl-u∸t≡0 t u t∸u≡1+n
 t ≤-total u | suc n with-≡ t∸u≡1+n | u∸t≡0 = inj₂ (∸≡0-impl-≤ u∸t≡0 , ∸≢0-impl-≰ t∸u≡1+n)
 
+-- + is monotone
+
++-resp-≤ : ∀ {t u} → (t ≤ u) → ∀ n → (t + n ≤ u + n)
++-resp-≤ (m , t+m≡u) n =
+  ( m 
+  , +-assoc _ n m trans 
+      cong₂ _+_ refl (+ℕ-comm n m) trans 
+        sym (+-assoc _ m n) trans 
+          cong₂ _+_ t+m≡u refl )
+
 -- Lemmas about <
 
 <-impl-≤ : ∀ {t u} → (t < u) → (t ≤ u)
@@ -137,6 +150,10 @@ _<-transʳ_ t≤u (u≤v , v≰u) = (t≤u ≤-trans u≤v , λ v≤t → v≰u 
 ≤-proof-irrel′ : ∀ {t u m n} → (m ≡ n) → (t+m≡u : t + m ≡ u) → (t+n≡u : t + n ≡ u) → 
   (t ≤ u) ∋ (m , t+m≡u) ≡ (n , t+n≡u)
 ≤-proof-irrel′ refl refl refl = refl
+
+<-impl-+1≤ : ∀ {t u} → (t < u) → (t + 1 ≤ u)
+<-impl-+1≤ {t} ((zero  , t+0≡u)   , u≰t) = ⊥-elim (u≰t (≡-impl-≥ (sym (+-unit t) trans t+0≡u)))
+<-impl-+1≤ {t} ((suc n , t+1+n≡u) , u≰t) = (n , +-assoc t 1 n trans t+1+n≡u)
 
 -- Proof irrelevance for ≤
 
