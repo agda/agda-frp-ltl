@@ -123,6 +123,21 @@ t ≤-total u | zero  with-≡ t∸u≡0 = inj₁ (∸≡0-impl-≤ t∸u≡0)
 t ≤-total u | suc n with-≡ t∸u≡1+n with t∸u≢0-impl-u∸t≡0 t u t∸u≡1+n
 t ≤-total u | suc n with-≡ t∸u≡1+n | u∸t≡0 = inj₂ (∸≡0-impl-≤ u∸t≡0 , ∸≢0-impl-≰ t∸u≡1+n)
 
+-- Case analysis on ≤
+
+data _≤-Case_ (t u : Time) : Set where
+  lt : .(t < u) → (t ≤-Case u)
+  eq : .(t ≡ u) → (t ≤-Case u)
+  gt : .(u < t) → (t ≤-Case u)
+
+_≤-case_ : ∀ t u → (t ≤-Case u)
+t ≤-case u with inspect (t ∸ u)   | inspect (u ∸ t)
+t ≤-case u | zero  with-≡ t∸u≡0   | zero with-≡ u∸t≡0    = eq (∸≡0-impl-≤ t∸u≡0 ≤-asym ∸≡0-impl-≤ u∸t≡0)
+t ≤-case u | suc n with-≡ t∸u≡1+n | zero with-≡ u∸t≡0    = gt (∸≡0-impl-≤ u∸t≡0 , ∸≢0-impl-≰ t∸u≡1+n)
+t ≤-case u | zero  with-≡ t∸u≡0   | suc n with-≡ u∸t≡1+n = lt (∸≡0-impl-≤ t∸u≡0 , ∸≢0-impl-≰ u∸t≡1+n)
+t ≤-case u | suc m with-≡ t∸u≡1+m | suc n with-≡ u∸t≡1+n with sym u∸t≡1+n trans t∸u≢0-impl-u∸t≡0 t u t∸u≡1+m
+t ≤-case u | suc m with-≡ t∸u≡1+m | suc n with-≡ u∸t≡1+n | ()
+
 -- + is monotone
 
 +-resp-≤ : ∀ {t u} → (t ≤ u) → ∀ n → (t + n ≤ u + n)

@@ -5,7 +5,8 @@ open import Relation.Binary.PropositionalEquality using ( _≡_ ; _≢_ ; refl ;
 open import Relation.Nullary using ( ¬_ )
 open import FRP.LTL.Time using 
   ( Time ; _<_ ; _≤_ ; _≥_ ; ≤-refl ; _≤-trans_ ; _≤-asym_ ; _≤-total_ ; ≤-proof-irrel ; ≡-impl-≥
-  ; _∸_ ; _+_ ; t≤u+t∸u ; +-unit ; +-assoc ; +-resp-≤ ; <-impl-+1≤ )
+  ; _∸_ ; _+_ ; t≤u+t∸u ; +-unit ; +-assoc ; +-resp-≤ ; <-impl-+1≤ 
+  ; _≤-case_ ; lt ; eq ; gt )
 open import FRP.LTL.Util using ( ⊥-elim )
 
 module FRP.LTL.Time.Bound where
@@ -67,6 +68,20 @@ fin s ≼-total +∞    = inj₁ +∞-top
 fin s ≼-total fin t with s ≤-total t
 ... | inj₁ s≤t = inj₁ (≤-impl-≼ s≤t)
 ... | inj₂ t<s = inj₂ (<-impl-≺ t<s)
+
+data _≼-Case_ (t u : Time∞) : Set where
+  lt : .(t ≺ u) → (t ≼-Case u)
+  eq : .(t ≡ u) → (t ≼-Case u)
+  gt : .(u ≺ t) → (t ≼-Case u)
+
+_≼-case_ : ∀ t u → (t ≼-Case u)
++∞    ≼-case +∞    = eq refl
++∞    ≼-case fin u = gt t≺+∞
+fin t ≼-case +∞    = lt t≺+∞
+fin t ≼-case fin u with t ≤-case u
+fin t ≼-case fin u | lt t<u = lt (<-impl-≺ t<u)
+fin t ≼-case fin u | eq t≡u = eq (cong fin t≡u)
+fin t ≼-case fin u | gt t>u = gt (<-impl-≺ t>u)
 
 ≡-impl-≼ : ∀ {s t} → (s ≡ t) → (s ≼ t)
 ≡-impl-≼ refl = ≼-refl

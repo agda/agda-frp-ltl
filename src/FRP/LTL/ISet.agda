@@ -6,7 +6,7 @@ open import FRP.LTL.ISet.Core public using ( ISet ; ⟨_⟩ ; ⟦_⟧ )
 
 open import FRP.LTL.ISet.Unit public using ( T )
 open import FRP.LTL.ISet.Empty public using ( F )
-open import FRP.LTL.ISet.Product public using ( _∧_ ) -- ; fst ; snd ; _&&&_ )
+open import FRP.LTL.ISet.Product public using ( _∧_ ; fst ; snd ; _&&&_ )
 open import FRP.LTL.ISet.Sum public using ( _∨_ )
 open import FRP.LTL.ISet.Stateless public using ( _⇒_ )
 

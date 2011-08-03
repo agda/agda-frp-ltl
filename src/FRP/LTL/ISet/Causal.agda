@@ -54,7 +54,7 @@ id +∞      = done refl
 id (fin t) = inp ≼-refl t≺+∞ (λ {u} t≺u σ → ♯ out t≺u σ (♯ id u))
 
 identity : ∀ {A} → ⟦ A ⊵ A ⟧
-identity {A} = ⟪ (λ t t∈i → id (fin t)) ⟫
+identity = ⟪ (λ t t∈i → id (fin t)) ⟫
 
 -- The following typechecks but does not pass the termination checker,
 -- due to the possibility of infinite left-to-right chatter:
@@ -89,3 +89,10 @@ mutual
 
 _⋙_ : ∀ {A B C} → ⟦ (A ⊵ B) ⇒ (B ⊵ C) ⇒ (A ⊵ C) ⟧
 (⟪ ⟪ f ⟫ ⟫ ⋙ ⟪ ⟪ g ⟫ ⟫) = ⟪ (λ t t∈i → f t t∈i ≫ g t t∈i) ⟫
+
+-- Apply a process to some of its output
+
+_/_/_ : ∀ {A B s t u} → (A ∙ s ⊸ B ∙ u) → .(s≺t : s ≺ t) → M⟦ A ⟧ [ ≺-impl-≼ s≺t ⟩ → (A ∙ t ⊸ B ∙ u)
+inp s≼u u≺∞ P / s≺t / σ = ♭ (P s≺t σ)
+out u≺v τ P   / s≺t / σ = out u≺v τ (♯ (♭ P / s≺t / σ))
+done u≡∞      / s≺t / σ = done u≡∞
