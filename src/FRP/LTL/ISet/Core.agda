@@ -145,7 +145,7 @@ i→m {A ⇛ B} {i} f = f
 ⌈_⌉ : RSet → ISet
 ⌈ A ⌉ = [ (λ i → ∀ t → .(t ∈ Int i) → A t) , id , comp , split ] where
 
-  id : ∀ i i~i t .t∈i → A t
+  id : ∀ i i~i t → .(t ∈ Int i) → A t
   id i i~i t t∈i = ⊥-elim (≺-impl-⋡ (≺ub t∈i) (≡-impl-≼ i~i ≼-trans lb≼ t∈i))
 
   comp : ∀ i j i~j → ((∀ t → .(t ∈ Int i) → A t) × (∀ t → .(t ∈ Int j) → A t)) → 
@@ -154,7 +154,8 @@ i→m {A ⇛ B} {i} f = f
   comp i j i~j (σ₁ , σ₂) t t∈i⌢j | inj₁ u≼t = σ₂ t (≡-impl-≽ i~j ≼-trans u≼t , ≺ub t∈i⌢j)
   comp i j i~j (σ₁ , σ₂) t t∈i⌢j | inj₂ t≺u = σ₁ t (lb≼ t∈i⌢j , t≺u)
 
-  split : ∀ i j i~j → (∀ t .t∈i⌢j → A t) → ((∀ t .t∈i → A t) × (∀ t .t∈j → A t))
+  split : ∀ i j i~j → (∀ t → .(t ∈ Int (i ⌢ j ∵ i~j)) → A t) → 
+    ((∀ t → .(t ∈ Int i) → A t) × (∀ t → .(t ∈ Int j) → A t))
   split i j i~j σ = 
     ( (λ t t∈i → σ t (lb≼ t∈i , ≺ub t∈i ≺-transˡ ≡-impl-≼ i~j ≼-trans lb≼ub j))
     , (λ t t∈j → σ t (lb≼ub i ≼-trans ≡-impl-≼ i~j ≼-trans lb≼ t∈j , ≺ub t∈j)) )
@@ -194,7 +195,7 @@ splitList split [ s≼t ⟩ [ t≼u ⟩ refl (cons {[ s≼v ⟩} {[ v≼u ⟩} r
 
 data Always (A : Set) (i : Interval) : Set where
   const : A → Always A i
-  var : ∀ j → .(i ⊑ j) → (∀ t → .{t∈j : t ∈ Int j} → A) → Always A i
+  var : ∀ j → .(i ⊑ j) → (∀ t → .(t ∈ Int j) → A) → Always A i
 
 splitAlways : ∀ {A} i j i~j → Always A (i ⌢ j ∵ i~j) → (Always A i × Always A j)
 splitAlways i j i~j (const a) = (const a , const a)

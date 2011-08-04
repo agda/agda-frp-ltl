@@ -103,10 +103,13 @@ fin t ≼-case fin u | gt t>u = gt (<-impl-≺ t>u)
 ≺-impl-≢ (t≼u , u⋠t) refl = u⋠t ≼-refl
 
 _≺-transˡ_ : ∀ {t u v} → (t ≺ u) → (u ≼ v) → (t ≺ v)
-_≺-transˡ_ (t≼u , u⋠t) u≼v = (t≼u ≼-trans u≼v , λ v≼t → u⋠t (u≼v ≼-trans v≼t))
+(t≼u , u⋠t) ≺-transˡ u≼v = (t≼u ≼-trans u≼v , λ v≼t → u⋠t (u≼v ≼-trans v≼t))
 
 _≺-transʳ_ : ∀ {t u v} → (t ≼ u) → (u ≺ v) → (t ≺ v)
-_≺-transʳ_ t≼u (u≼v , v⋠u) = (t≼u ≼-trans u≼v , λ v≼t → v⋠u (v≼t ≼-trans t≼u))
+t≼u ≺-transʳ (u≼v , v⋠u) = (t≼u ≼-trans u≼v , λ v≼t → v⋠u (v≼t ≼-trans t≼u))
+
+_≺-trans_ : ∀ {t u v} → (t ≺ u) → (u ≺ v) → (t ≺ v)
+(t≼u , u⋠t) ≺-trans (u≼v , v⋠u) = (t≼u ≼-trans u≼v , λ v≼t → v⋠u (v≼t ≼-trans t≼u))
 
 ∞≼-impl-≡∞ : ∀ {t} → (+∞ ≼ t) → (t ≡ +∞)
 ∞≼-impl-≡∞ +∞-top = refl
