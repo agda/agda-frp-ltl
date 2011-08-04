@@ -12,7 +12,7 @@ open import FRP.LTL.ISet.Stateless public using ( _⇒_ )
 
 -- LTL
 
--- open import FRP.LTL.ISet.Next public using ( ○ )
+open import FRP.LTL.ISet.Next public using ( ○ )
 -- open import FRP.LTL.ISet.Future public using ( ◇ )
 open import FRP.LTL.ISet.Globally public using ( □ ; [_] )
 -- open import FRP.LTL.ISet.Until public using ( _U_ )

@@ -1,6 +1,6 @@
-open import FRP.LTL.Time using ( Time )
+open import FRP.LTL.Time using ( Time ; _,_ )
 open import FRP.LTL.Time.Bound using 
-  ( Time∞ ; _≼_ ; _≺_ ; fin ; +∞-top ; ≼-refl ; _≼-trans_ ; ≡-impl-≼ )
+  ( Time∞ ; _≼_ ; _≺_ ; fin ; +∞-top ; ≼-refl ; _≼-trans_ ; ≡-impl-≼ ; ≤-impl-≼ )
 open import FRP.LTL.Util using ( irrelevant )
 open import Relation.Unary using ( _∈_ )
 open import Relation.Binary.PropositionalEquality using ( _≡_ ; refl ; sym )
@@ -76,3 +76,8 @@ i ⌢ j ∵ i~j = [ lb≼ub i ≼-trans ≡-impl-≼ i~j ≼-trans lb≼ub j ⟩
 
 ↑ : Time∞ → Interval
 ↑ t = [ +∞-top {t} ⟩
+
+-- Singleton interval
+
+sing : Time → Interval
+sing t = [ ≤-impl-≼ {t} (1 , refl) ⟩

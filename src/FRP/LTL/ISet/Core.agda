@@ -6,7 +6,7 @@ open import FRP.LTL.Time.Bound using
   ; ≺-impl-≼ ; ≡-impl-≼ ; ≡-impl-≽ ; ≺-impl-⋡ ; src )
 open import FRP.LTL.Time.Interval using 
   ( Interval ; [_⟩ ; _⊑_ ; _~_ ; _,_ ; lb ; ub ; lb≼ ; ≺ub ; Int ; _⌢_∵_ 
-  ; ⊑-impl-≼ ; ⊑-impl-≽ ; lb≼ub ; ⊑-refl ; _⊑-trans_ ; ⌢-inj₁ ; ⌢-inj₂ )
+  ; ⊑-impl-≼ ; ⊑-impl-≽ ; lb≼ub ; ⊑-refl ; _⊑-trans_ ; ⌢-inj₁ ; ⌢-inj₂ ; sing )
 open import FRP.LTL.Util using ( ≡-relevant ; ⊥-elim )
 open import Relation.Binary.PropositionalEquality using ( _≡_ ; refl )
 open import Relation.Unary using ( _∈_ )
@@ -159,6 +159,11 @@ i→m {A ⇛ B} {i} f = f
   split i j i~j σ = 
     ( (λ t t∈i → σ t (lb≼ t∈i , ≺ub t∈i ≺-transˡ ≡-impl-≼ i~j ≼-trans lb≼ub j))
     , (λ t t∈j → σ t (lb≼ub i ≼-trans ≡-impl-≼ i~j ≼-trans lb≼ t∈j , ≺ub t∈j)) )
+
+-- Embedding of ISet into RSet
+
+⌊_⌋ : ISet → RSet
+⌊ A ⌋ t = M⟦ A ⟧ (sing t)
 
 -- Embedding of Set into ISet
 
