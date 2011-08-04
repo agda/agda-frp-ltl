@@ -6,3 +6,6 @@ The top-level module is FRP.LTL.
 The specification is given in terms of "reactive types", defined in FRP.LTL.RSet.
 
 The implementation is given in term of "interval types", defined in FRP.LTL.ISet.
+
+This library makes use of experimental features of Agda, and compiles
+with the trunk branch of the Agda compiler and standard library as of August 2011.
