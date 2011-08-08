@@ -5,7 +5,7 @@ open import Relation.Binary.PropositionalEquality using ( _≡_ ; _≢_ ; refl ;
 open import Relation.Nullary using ( ¬_ )
 open import FRP.LTL.Time using 
   ( Time ; _<_ ; _≤_ ; _≥_ ; ≤-refl ; _≤-trans_ ; _≤-asym_ ; _≤-total_ ; ≤-proof-irrel ; ≡-impl-≥
-  ; _∸_ ; _+_ ; t≤u+t∸u ; +-unit ; +-assoc ; +-resp-≤ ; <-impl-+1≤ 
+  ; _∸_ ; _+_ ; t≤u+t∸u ; +-unit ; +-assoc ; +-resp-≤ ; <-impl-+1≤ ; t<t+1
   ; _≤-case_ ; lt ; eq ; gt )
 open import FRP.LTL.Util using ( ⊥-elim )
 
@@ -13,7 +13,7 @@ module FRP.LTL.Time.Bound where
 
 infixr 2 _≼_ _≺_ _⋠_ 
 infixr 4 _,_
-infixr 5 _≼-trans_ _≼-asym_ _≼-total_ _≺-transˡ_ _≺-transʳ_
+infixr 5 _≼-trans_ _≼-asym_ _≼-total_ _≺-transˡ_ _≺-transʳ_ _≺-trans_
 
 -- Time bounds, which extend Time with least and greatest elements
 
@@ -46,6 +46,9 @@ t≺+∞ = (+∞-top , λ ())
 
 ≺-impl-< : ∀ {t u} → (fin t ≺ fin u) → (t < u)
 ≺-impl-< (t≼u , u⋠t) = (≼-impl-≤ t≼u , λ u≤t → u⋠t (≤-impl-≼ u≤t))
+
+t≺t+1 : ∀ {t} → (fin t ≺ fin (t + 1))
+t≺t+1 = <-impl-≺ t<t+1
 
 -- ≼ is a decidable total order
 

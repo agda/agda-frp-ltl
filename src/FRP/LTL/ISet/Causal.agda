@@ -23,10 +23,10 @@ infixr 3 _⋙_ _≫_ _⊨_≫_
 
 data _∙_⊸_∙_ (A : ISet) (s : Time∞) (B : ISet) (u : Time∞) : Set where
   inp : .(s ≼ u) → .(u ≺ +∞) → 
-    (∀ {t} .(s≺t : s ≺ t) → M⟦ A ⟧ [ ≺-impl-≼ s≺t ⟩ → ∞ (A ∙ t ⊸ B ∙ u)) → 
+    (∀ {t} .(s≺t : s ≺ t) → M⟦ A ⟧ [ s≺t ⟩ → ∞ (A ∙ t ⊸ B ∙ u)) → 
       (A ∙ s ⊸ B ∙ u)
   out : ∀ {v} .(u≺v : u ≺ v) → 
-    M⟦ B ⟧ [ ≺-impl-≼ u≺v ⟩ → ∞ (A ∙ s ⊸ B ∙ v) → 
+    M⟦ B ⟧ [ u≺v ⟩ → ∞ (A ∙ s ⊸ B ∙ v) → 
       (A ∙ s ⊸ B ∙ u)
   done : .(u ≡ +∞) → 
     (A ∙ s ⊸ B ∙ u)
@@ -36,16 +36,16 @@ A ⊵ B = ⌈ (λ t → A ∙ fin t ⊸ B ∙ fin t) ⌉
 
 -- Categorical structure
 
-ar : ∀ {A B} t → M⟦ A ⇒ B ⟧ (↑ t) → (A ∙ t ⊸ B ∙ t)
-ar {A} {B} +∞      f = done refl
-ar {A} {B} (fin t) f = inp ≼-refl t≺+∞ P where
+ar : ∀ {A B} t → M⟦ A ⇒ B ⟧ (↑ t) → (A ∙ fin t ⊸ B ∙ fin t)
+ar {A} {B} t f = inp ≼-refl t≺+∞ P where
 
-  P : ∀ {u} .t≺u → M⟦ A ⟧ [ ≺-impl-≼ t≺u ⟩ → ∞ (A ∙ u ⊸ B ∙ fin t)
-  P {u} t≺u σ with splitM⟦ A ⇒ B ⟧ [ ≺-impl-≼ t≺u ⟩ (↑ u) refl f
-  P {u} t≺u σ | (f₁ , f₂) = ♯ out t≺u (f₁ $ σ) (♯ ar u f₂)
+  P : ∀ {u} .(t≺u : fin t ≺ u) → M⟦ A ⟧ [ t≺u ⟩ → ∞ (A ∙ u ⊸ B ∙ fin t)
+  P {+∞}    t≺u σ = ♯ out t≺u (f $ σ) (♯ done refl)
+  P {fin u} t≺u σ with splitM⟦ A ⇒ B ⟧ [ t≺u ⟩ (↑ u) refl f
+  P {fin u} t≺u σ | (f₁ , f₂) = ♯ out t≺u (f₁ $ σ) (♯ ar u f₂)
 
 arr : ∀ {A B} → ⟦ □ (A ⇒ B) ⇒ (A ⊵ B) ⟧
-arr ⟪ ⟪ f ⟫ ⟫ = ⟪ (λ t t∈i → ar (fin t) (f t t∈i) ) ⟫
+arr ⟪ ⟪ f ⟫ ⟫ = ⟪ (λ t t∈i → ar t (f t t∈i) ) ⟫
 
 -- We could define id in terms of arr, but we define it explictly for efficiency.
 
@@ -92,7 +92,7 @@ _⋙_ : ∀ {A B C} → ⟦ (A ⊵ B) ⇒ (B ⊵ C) ⇒ (A ⊵ C) ⟧
 
 -- Apply a process to some of its output
 
-_/_/_ : ∀ {A B s t u} → (A ∙ s ⊸ B ∙ u) → .(s≺t : s ≺ t) → M⟦ A ⟧ [ ≺-impl-≼ s≺t ⟩ → (A ∙ t ⊸ B ∙ u)
+_/_/_ : ∀ {A B s t u} → (A ∙ s ⊸ B ∙ u) → .(s≺t : s ≺ t) → M⟦ A ⟧ [ s≺t ⟩ → (A ∙ t ⊸ B ∙ u)
 inp s≼u u≺∞ P / s≺t / σ = ♭ (P s≺t σ)
 out u≺v τ P   / s≺t / σ = out u≺v τ (♯ (♭ P / s≺t / σ))
 done u≡∞      / s≺t / σ = done u≡∞

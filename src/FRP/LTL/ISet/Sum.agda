@@ -1,13 +1,12 @@
 open import Data.Product using ( _×_ ; _,_ )
 open import Data.Sum using ( _⊎_ ; inj₁ ; inj₂  )
-open import FRP.LTL.Time.Interval using ( _~_ ; _⌢_∵_ )
-open import FRP.LTL.ISet.Core using 
-  ( ISet ; IList ; [_] ; _,_ ; M⟦_⟧ ; idList ; compList ; splitList ; splitM⟦_⟧ )
+open import FRP.LTL.Time.Interval using ( _⊑_ ; _~_ ; _⌢_∵_ )
+open import FRP.LTL.ISet.Core using ( ISet ; [_] ; _,_ ; M⟦_⟧ ; splitM⟦_⟧ ; subsumM⟦_⟧ )
 
 module FRP.LTL.ISet.Sum where
 
 _∨_ : ISet → ISet → ISet
-A ∨ B = [ IList (λ i → M⟦ A ⟧ i ⊎ M⟦ B ⟧ i) , idList , compList , splitList split ] where
+A ∨ B = [ (λ i → M⟦ A ⟧ i ⊎ M⟦ B ⟧ i) , split , subsum ] where
 
   split : ∀ i j i~j → 
     (M⟦ A ⟧ (i ⌢ j ∵ i~j) ⊎ M⟦ B ⟧ (i ⌢ j ∵ i~j)) → 
@@ -17,3 +16,6 @@ A ∨ B = [ IList (λ i → M⟦ A ⟧ i ⊎ M⟦ B ⟧ i) , idList , compList ,
   split i j i~j (inj₂ τ) with splitM⟦ B ⟧ i j i~j τ
   split i j i~j (inj₂ τ) | (τ₁ , τ₂) = (inj₂ τ₁ , inj₂ τ₂)
    
+  subsum : ∀ i j → (i ⊑ j) → (M⟦ A ⟧ j ⊎ M⟦ B ⟧ j) → (M⟦ A ⟧ i ⊎ M⟦ B ⟧ i)
+  subsum i j i⊑j (inj₁ σ) = inj₁ (subsumM⟦ A ⟧ i j i⊑j σ)
+  subsum i j i⊑j (inj₂ τ) = inj₂ (subsumM⟦ B ⟧ i j i⊑j τ)

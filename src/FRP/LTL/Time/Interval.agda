@@ -1,7 +1,8 @@
 open import FRP.LTL.Time using ( Time ; _,_ )
 open import FRP.LTL.Time.Bound using 
-  ( Time∞ ; _≼_ ; _≺_ ; fin ; +∞-top ; ≼-refl ; _≼-trans_ ; ≡-impl-≼ ; ≤-impl-≼ )
-open import FRP.LTL.Util using ( irrelevant )
+  ( Time∞ ; _≼_ ; _≺_ ; fin ; +∞ ; +∞-top ; t≺+∞ ; ≼-refl ; _≼-trans_ 
+  ; ≡-impl-≼ ; ≺-impl-≼ ; _≺-trans_ ; _≺-transʳ_ ; ≺-impl-⋡ ; t≺t+1 )
+open import FRP.LTL.Util using ( irrelevant ; ⊥-elim )
 open import Relation.Unary using ( _∈_ )
 open import Relation.Binary.PropositionalEquality using ( _≡_ ; refl ; sym )
 
@@ -12,31 +13,35 @@ infixr 4 _,_ _⌢_∵_
 
 -- Semi-open intervals, with possibly infinite bounds
 
+-- Previous versions of Interval used ≼ rather than ≺ 
+-- (that is, empty intervals were supported) but
+-- MSet has been written to avoid requiring empty intervals.
+
 data Interval : Set where
-  [_⟩ : ∀ {s t} → .(s ≼ t) → Interval
+  [_⟩ : ∀ {s t} → .(s ≺ t) → Interval
 
 lb : Interval → Time∞
-lb ([_⟩ {s} {t} s≼t) = s
+lb ([_⟩ {s} {t} s≺t) = s
 
 ub : Interval → Time∞
-ub ([_⟩ {s} {t} s≼t) = t
+ub ([_⟩ {s} {t} s≺t) = t
 
-.lb≼ub : ∀ i → (lb i ≼ ub i)
-lb≼ub [ s≼t ⟩ = irrelevant s≼t
+.lb≺ub : ∀ i → (lb i ≺ ub i)
+lb≺ub [ s≺t ⟩ = irrelevant s≺t
 
 -- Semantics of intervals
 
 data Int∞ (i : Interval) (t : Time∞) : Set where
-  _,_ : (lb i ≼ t) → (t ≺ ub i) → (t ∈ Int∞ i)
+  _,_ : .(lb i ≼ t) → .(t ≺ ub i) → (t ∈ Int∞ i)
 
 Int : Interval → Time → Set
 Int i t = fin t ∈ Int∞ i
 
-lb≼ : ∀ {t i} → (t ∈ Int i) → (lb i ≼ fin t)
-lb≼ (s≼t , t≺u) = s≼t
+.lb≼ : ∀ {t i} → (t ∈ Int i) → (lb i ≼ fin t)
+lb≼ (s≼t , t≺u) = irrelevant s≼t
 
-≺ub : ∀ {t i} → (t ∈ Int i) → (fin t ≺ ub i)
-≺ub (s≼t , t≺u) = t≺u
+.≺ub : ∀ {t i} → (t ∈ Int i) → (fin t ≺ ub i)
+≺ub (s≼t , t≺u) = irrelevant t≺u
 
 -- Ordering on intervals
 
@@ -64,20 +69,20 @@ i ~ j = ub i ≡ lb j
 -- Concatenation of intervals
 
 _⌢_∵_ : ∀ i j → (i ~ j) → Interval
-i ⌢ j ∵ i~j = [ lb≼ub i ≼-trans ≡-impl-≼ i~j ≼-trans lb≼ub j ⟩
+i ⌢ j ∵ i~j = [ lb≺ub i ≺-trans ≡-impl-≼ i~j ≺-transʳ lb≺ub j ⟩
 
 ⌢-inj₁ : ∀ i j i~j → (i ⊑ (i ⌢ j ∵ i~j))
-⌢-inj₁ [ s≼t ⟩ [ t≼u ⟩ refl = (≼-refl , t≼u)
+⌢-inj₁ [ s≺t ⟩ [ t≺u ⟩ refl = (≼-refl , ≺-impl-≼ t≺u)
 
 ⌢-inj₂ : ∀ i j i~j → (j ⊑ (i ⌢ j ∵ i~j))
-⌢-inj₂ [ s≼t ⟩ [ t≼u ⟩ refl = (s≼t , ≼-refl)
+⌢-inj₂ [ s≺t ⟩ [ t≺u ⟩ refl = (≺-impl-≼ s≺t , ≼-refl)
 
 -- Up-closure of a time
 
-↑ : Time∞ → Interval
-↑ t = [ +∞-top {t} ⟩
+↑ : Time → Interval
+↑ t = [ t≺+∞ {t} ⟩
 
 -- Singleton interval
 
 sing : Time → Interval
-sing t = [ ≤-impl-≼ {t} (1 , refl) ⟩
+sing t = [ t≺t+1 {t} ⟩

@@ -148,6 +148,15 @@ t ≤-case u | suc m with-≡ t∸u≡1+m | suc n with-≡ u∸t≡1+n | ()
         sym (+-assoc _ m n) trans 
           cong₂ _+_ t+m≡u refl )
 
++-refl-≤ : ∀ {t u} n → (t + n ≤ u + n) → (t ≤ u)
++-refl-≤ n (m , t+n+m≡u+n) = 
+  ( m 
+  , +-cancelʳ n 
+    (+-assoc _ m n trans 
+      cong₂ _+_ refl (+ℕ-comm m n) trans 
+        sym (+-assoc _ n m) trans 
+          t+n+m≡u+n) )
+
 -- Lemmas about <
 
 <-impl-≤ : ∀ {t u} → (t < u) → (t ≤ u)
@@ -166,9 +175,22 @@ _<-transʳ_ t≤u (u≤v , v≰u) = (t≤u ≤-trans u≤v , λ v≤t → v≰u 
   (t ≤ u) ∋ (m , t+m≡u) ≡ (n , t+n≡u)
 ≤-proof-irrel′ refl refl refl = refl
 
+t≤t+1 : ∀ {t} → (t ≤ t + 1)
+t≤t+1 = (1 , refl)
+
+t≱t+1 : ∀ {t} → (t ≱ t + 1)
+t≱t+1 {t} (m , t+1+m≡t) with +-cancelˡ t (sym (+-assoc t 1 m) trans t+1+m≡t trans sym (+-unit t))
+t≱t+1 (m , t+1+m≡t) | ()
+
+t<t+1 : ∀ {t} → (t < t + 1)
+t<t+1 = (t≤t+1 , t≱t+1)
+
 <-impl-+1≤ : ∀ {t u} → (t < u) → (t + 1 ≤ u)
 <-impl-+1≤ {t} ((zero  , t+0≡u)   , u≰t) = ⊥-elim (u≰t (≡-impl-≥ (sym (+-unit t) trans t+0≡u)))
 <-impl-+1≤ {t} ((suc n , t+1+n≡u) , u≰t) = (n , +-assoc t 1 n trans t+1+n≡u)
+
++-resp-< : ∀ {t u} → (t < u) → ∀ n → (t + n < u + n)
++-resp-< (t≤u , t≱u) n = (+-resp-≤ t≤u n , λ u+n≤t+n → t≱u (+-refl-≤ n u+n≤t+n))
 
 -- Proof irrelevance for ≤
 
