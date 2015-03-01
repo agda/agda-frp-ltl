@@ -119,9 +119,9 @@ t∸u≢0-impl-u∸t≡0 t u {n} t∸u≡1+n | (suc m , t+1+m≡u+t∸u) =
 
 _≤-total_ : ∀ t u → (t ≤ u) ⊎ (u < t)
 t ≤-total u with t ∸ u | inspect (_∸_ t) u
-... | zero | [ t∸u≡0 ] = inj₁ (∸≡0-impl-≤ t∸u≡0)
-... | suc n | [ t∸u≡1+n ] with t∸u≢0-impl-u∸t≡0 t u t∸u≡1+n
-... | u∸t≡0 = inj₂ (∸≡0-impl-≤ u∸t≡0 , ∸≢0-impl-≰ t∸u≡1+n)
+t ≤-total u | zero  | [ t∸u≡0 ] = inj₁ (∸≡0-impl-≤ t∸u≡0)
+t ≤-total u | suc n | [ t∸u≡1+n ] with t∸u≢0-impl-u∸t≡0 t u t∸u≡1+n
+t ≤-total u | suc n | [ t∸u≡1+n ] | u∸t≡0 = inj₂ (∸≡0-impl-≤ u∸t≡0 , ∸≢0-impl-≰ t∸u≡1+n)
 
 -- Case analysis on ≤
 
@@ -132,11 +132,11 @@ data _≤-Case_ (t u : Time) : Set where
 
 _≤-case_ : ∀ t u → (t ≤-Case u)
 t ≤-case u with (t ∸ u) | inspect (_∸_ t) u | u ∸ t | inspect (_∸_ u) t
-... | zero | [ t∸u≡0 ] | zero | [ u∸t≡0 ] = eq (∸≡0-impl-≤ t∸u≡0 ≤-asym ∸≡0-impl-≤ u∸t≡0)
-... | suc n | [ t∸u≡1+n ] | zero | [ u∸t≡0 ] = gt (∸≡0-impl-≤ u∸t≡0 , ∸≢0-impl-≰ t∸u≡1+n)
-... | zero | [ t∸u≡0 ] | suc w₁ | [ u∸t≡1+n ] = lt (∸≡0-impl-≤ t∸u≡0 , ∸≢0-impl-≰ u∸t≡1+n)
-... | suc m | [ t∸u≡1+m ] | suc n | [ u∸t≡1+n ] with sym u∸t≡1+n trans t∸u≢0-impl-u∸t≡0 t u t∸u≡1+m
-... | ()
+t ≤-case u | zero  | [ t∸u≡0 ]   | zero   | [ u∸t≡0 ] = eq (∸≡0-impl-≤ t∸u≡0 ≤-asym ∸≡0-impl-≤ u∸t≡0)
+t ≤-case u | suc n | [ t∸u≡1+n ] | zero   | [ u∸t≡0 ] = gt (∸≡0-impl-≤ u∸t≡0 , ∸≢0-impl-≰ t∸u≡1+n)
+t ≤-case u | zero  | [ t∸u≡0 ]   | suc w₁ | [ u∸t≡1+n ] = lt (∸≡0-impl-≤ t∸u≡0 , ∸≢0-impl-≰ u∸t≡1+n)
+t ≤-case u | suc m | [ t∸u≡1+m ] | suc n  | [ u∸t≡1+n ] with sym u∸t≡1+n trans t∸u≢0-impl-u∸t≡0 t u t∸u≡1+m
+t ≤-case u | suc m | [ t∸u≡1+m ] | suc n  | [ u∸t≡1+n ] | ()
 
 -- + is monotone
 
